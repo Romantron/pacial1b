@@ -54,8 +54,6 @@ class ContactoControllerTest {
 
 # Se ejecuta las pruebas 
 
-![image](https://github.com/user-attachments/assets/7d725a4a-6b71-471a-8ba5-f5d861887ef2)
-
 
 ```
 C:\Users\roman.urrego\Documents\universidad\Desarrollo de software 2\prjectoagendagithub2\agenda>mvnd test
@@ -163,6 +161,246 @@ C:\Users\roman.urrego\Documents\universidad\Desarrollo de software 2\prjectoagen
 
 C:\Users\roman.urrego\Documents\universidad\Desarrollo de software 2\prjectoagendagithub2\agenda>
 ```
+
+# Pruebas Pruebas de Integración con WebTestClient
+
+Se procede a configurar la clase ContactoControllerTest.java con el siguiente codigido 
+
+```package com.agenda.agenda;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@SpringBootTest
+@AutoConfigureWebTestClient
+public class ContactoControllerTest {
+
+    @Autowired
+    private WebTestClient webTestClient;
+
+    @Autowired
+    private ContactoController contactoController;
+
+    @BeforeEach
+    void setUp() {
+        contactoController.limpiarListaContactos(); // Limpiar la lista antes de cada prueba
+    }
+
+    @Test
+    public void testAgregarContacto() {
+        Map<String, Object> contacto = new HashMap<>();
+        contacto.put("nombre", "Juan Pérez");
+        contacto.put("telefono", "3001234567");
+        contacto.put("email", "juan.perez@email.com");
+
+        webTestClient.post().uri("/api/contactos")
+                .contentType(MediaType.APPLICATION_JSON).bodyValue(contacto).exchange().expectStatus().isCreated()
+                .expectBody().jsonPath("$.nombre").isEqualTo("Juan Pérez").jsonPath("$.telefono")
+                .isEqualTo("3001234567").jsonPath("$.email").isEqualTo("juan.perez@email.com");
+    }
+
+    
+    @Test
+    public void testAgregarContactoDuplicado() {
+        Map<String, Object> contacto = new HashMap<>();
+        contacto.put("nombre", "Juan Pérez");
+        contacto.put("telefono", "3001234567");
+        contacto.put("email", "juan.perez@email.com");
+
+        webTestClient.post().uri("/api/contactos")
+                .contentType(MediaType.APPLICATION_JSON).bodyValue(contacto).exchange().expectStatus().isCreated();
+
+        webTestClient.post().uri("/api/contactos")
+                .contentType(MediaType.APPLICATION_JSON).bodyValue(contacto).exchange().expectStatus()
+                .isEqualTo(HttpStatus.CONFLICT)
+                .expectBody().isEmpty(); // Cambiado para verificar que el cuerpo esté vacío (null)
+    }
+
+    @Test
+    public void testObtenerContactos() {
+        Map<String, Object> contacto1 = new HashMap<>();
+        contacto1.put("nombre", "Juan Pérez");
+        contacto1.put("telefono", "3001234567");
+        contacto1.put("email", "juan.perez@email.com");
+
+        Map<String, Object> contacto2 = new HashMap<>();
+        contacto2.put("nombre", "María Gómez");
+        contacto2.put("telefono", "3019876543");
+        contacto2.put("email", "maria.gomez@email.com");
+
+        webTestClient.post().uri("/api/contactos")
+                .contentType(MediaType.APPLICATION_JSON).bodyValue(contacto1).exchange().expectStatus().isCreated();
+
+        webTestClient.post().uri("/api/contactos")
+                .contentType(MediaType.APPLICATION_JSON).bodyValue(contacto2).exchange().expectStatus().isCreated();
+
+        webTestClient.get().uri("/api/contactos")
+                .exchange().expectStatus().isOk().expectBody().jsonPath("$[0].nombre").isEqualTo("Juan Pérez")
+                .jsonPath("$[1].nombre").isEqualTo("María Gómez");
+    }
+
+    @Test
+    public void testEliminarContacto() {
+        Map<String, Object> contacto = new HashMap<>();
+        contacto.put("nombre", "Juan Pérez");
+        contacto.put("telefono", "3001234567");
+        contacto.put("email", "juan.perez@email.com");
+
+        webTestClient.post().uri("/api/contactos").contentType(MediaType.APPLICATION_JSON).bodyValue(contacto)
+                .exchange().expectStatus().isCreated();
+
+        webTestClient.delete().uri("/api/contactos/Juan Pérez")
+                .exchange().expectStatus().isOk().expectBody(String.class).isEqualTo("Contacto eliminado: Juan Pérez");
+
+        webTestClient.get().uri("/api/contactos").exchange().expectStatus().isOk().expectBody()
+                .jsonPath("$[?(@.nombre == 'Juan Pérez')]").doesNotExist();
+    }
+
+    @Test
+    public void testLimpiarContactos() {
+        webTestClient.delete().uri("/api/contactos/limpiar").exchange().expectStatus().isOk().expectBody(String.class)
+                .isEqualTo("Todos los contactos han sido eliminados.");
+
+        webTestClient.get().uri("/api/contactos").exchange().expectStatus().isOk().expectBody().jsonPath("$").isEmpty();
+    }
+}
+```
+
+Se ejetutan las pruebas obteniendo el siguiente resultado.
+
+```[INFO] Scanning for projects...
+[INFO] 
+[INFO] [1m-------------------------< [0;36mcom.agenda:agenda[0;1m >--------------------------[m
+[INFO] [1mBuilding agenda 0.0.1-SNAPSHOT[m
+[INFO]   from pom.xml
+[INFO] [1m--------------------------------[ jar ]---------------------------------[m
+[INFO] 
+[INFO] [1m--- [0;32mresources:3.3.1:resources[m [1m(default-resources)[m @ [36magenda[0;1m ---[m
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] [1m--- [0;32mcompiler:3.13.0:compile[m [1m(default-compile)[m @ [36magenda[0;1m ---[m
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] [1m--- [0;32mresources:3.3.1:testResources[m [1m(default-testResources)[m @ [36magenda[0;1m ---[m
+[INFO] skip non existing resourceDirectory C:\Users\roman.urrego\Documents\universidad\Desarrollo de software 2\prjectoagendagithub2\agenda\src\test\resources
+[INFO] 
+[INFO] [1m--- [0;32mcompiler:3.13.0:testCompile[m [1m(default-testCompile)[m @ [36magenda[0;1m ---[m
+[INFO] Recompiling the module because of [1mchanged source code[m.
+[INFO] Compiling 2 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] [1m--- [0;32msurefire:3.5.2:test[m [1m(default-test)[m @ [36magenda[0;1m ---[m
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.agenda.agenda.[1mAgendaApplicationTests[m
+16:58:22.885 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.agenda.agenda.AgendaApplicationTests]: AgendaApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+16:58:22.993 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.agenda.agenda.AgendaApplication for test class com.agenda.agenda.AgendaApplicationTests
+16:58:23.156 [main] INFO org.springframework.boot.devtools.restart.RestartApplicationListener -- Restart disabled due to context in which it is running
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.4)
+
+2025-03-29T16:58:23.431-05:00  INFO 18592 --- [agenda] [           main] c.agenda.agenda.AgendaApplicationTests   : Starting AgendaApplicationTests using Java 21.0.6 with PID 18592 (started by roman.urrego in C:\Users\roman.urrego\Documents\universidad\Desarrollo de software 2\prjectoagendagithub2\agenda)
+2025-03-29T16:58:23.432-05:00  INFO 18592 --- [agenda] [           main] c.agenda.agenda.AgendaApplicationTests   : No active profile set, falling back to 1 default profile: "default"
+2025-03-29T16:58:23.969-05:00  INFO 18592 --- [agenda] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-03-29T16:58:24.083-05:00  INFO 18592 --- [agenda] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 105 ms. Found 1 JPA repository interface.
+2025-03-29T16:58:24.380-05:00  INFO 18592 --- [agenda] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-03-29T16:58:24.572-05:00  INFO 18592 --- [agenda] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:agenda user=SA
+2025-03-29T16:58:24.573-05:00  INFO 18592 --- [agenda] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-03-29T16:58:24.619-05:00  INFO 18592 --- [agenda] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-03-29T16:58:24.666-05:00  INFO 18592 --- [agenda] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.11.Final
+2025-03-29T16:58:24.704-05:00  INFO 18592 --- [agenda] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-03-29T16:58:25.117-05:00  INFO 18592 --- [agenda] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-03-29T16:58:25.188-05:00  WARN 18592 --- [agenda] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-03-29T16:58:25.212-05:00  INFO 18592 --- [agenda] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-03-29T16:58:25.819-05:00  INFO 18592 --- [agenda] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-03-29T16:58:25.848-05:00  INFO 18592 --- [agenda] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-03-29T16:58:26.816-05:00  INFO 18592 --- [agenda] [           main] c.agenda.agenda.AgendaApplicationTests   : Started AgendaApplicationTests in 3.674 seconds (process running for 4.546)
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build what is described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\roman.urrego\.m2\repository\net\bytebuddy\byte-buddy-agent\1.15.11\byte-buddy-agent-1.15.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] [1;32mTests run: [0;1;32m1[m, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.587 s -- in com.agenda.agenda.[1mAgendaApplicationTests[m
+[INFO] Running com.agenda.agenda.[1mContactoControllerTest[m
+2025-03-29T16:58:27.350-05:00  INFO 18592 --- [agenda] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.agenda.agenda.ContactoControllerTest]: ContactoControllerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-03-29T16:58:27.368-05:00  INFO 18592 --- [agenda] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.agenda.agenda.AgendaApplication for test class com.agenda.agenda.ContactoControllerTest
+2025-03-29T16:58:27.374-05:00  INFO 18592 --- [agenda] [           main] o.s.b.d.r.RestartApplicationListener     : Restart disabled due to context in which it is running
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.4)
+
+2025-03-29T16:58:27.409-05:00  INFO 18592 --- [agenda] [           main] c.agenda.agenda.ContactoControllerTest   : Starting ContactoControllerTest using Java 21.0.6 with PID 18592 (started by roman.urrego in C:\Users\roman.urrego\Documents\universidad\Desarrollo de software 2\prjectoagendagithub2\agenda)
+2025-03-29T16:58:27.410-05:00  INFO 18592 --- [agenda] [           main] c.agenda.agenda.ContactoControllerTest   : No active profile set, falling back to 1 default profile: "default"
+2025-03-29T16:58:27.555-05:00  INFO 18592 --- [agenda] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-03-29T16:58:27.563-05:00  INFO 18592 --- [agenda] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 7 ms. Found 1 JPA repository interface.
+2025-03-29T16:58:27.645-05:00  INFO 18592 --- [agenda] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2025-03-29T16:58:27.646-05:00  INFO 18592 --- [agenda] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection conn10: url=jdbc:h2:mem:agenda user=SA
+2025-03-29T16:58:27.646-05:00  INFO 18592 --- [agenda] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2025-03-29T16:58:27.648-05:00  INFO 18592 --- [agenda] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-03-29T16:58:27.651-05:00  INFO 18592 --- [agenda] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-03-29T16:58:27.660-05:00  INFO 18592 --- [agenda] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-03-29T16:58:27.662-05:00  WARN 18592 --- [agenda] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-03-29T16:58:27.662-05:00  INFO 18592 --- [agenda] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-2)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-03-29T16:58:27.698-05:00  INFO 18592 --- [agenda] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-03-29T16:58:27.703-05:00  INFO 18592 --- [agenda] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-03-29T16:58:27.858-05:00  INFO 18592 --- [agenda] [           main] c.agenda.agenda.ContactoControllerTest   : Started ContactoControllerTest in 0.484 seconds (process running for 5.588)
+[INFO] [1;32mTests run: [0;1;32m5[m, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.848 s -- in com.agenda.agenda.[1mContactoControllerTest[m
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] [1;32mTests run: 6, Failures: 0, Errors: 0, Skipped: 0[m
+[INFO] 
+[INFO] [1m------------------------------------------------------------------------[m
+[INFO] [1;32mBUILD SUCCESS[m
+[INFO] [1m------------------------------------------------------------------------[m
+[INFO] Total time:  9.234 s
+[INFO] Finished at: 2025-03-29T16:58:28-05:00
+[INFO] [1m------------------------------------------------------------------------[m
+ ```
+
+
+
+
 
 
 
