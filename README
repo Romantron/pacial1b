@@ -52,7 +52,7 @@ class ContactoControllerTest {
 } 
 ```
 
-# Se ejecuta las pruebas 
+# Se realizan las pruebas con el comando MVND Test arrojando los siguientes datos:
 
 
 ```
@@ -162,9 +162,12 @@ C:\Users\roman.urrego\Documents\universidad\Desarrollo de software 2\prjectoagen
 C:\Users\roman.urrego\Documents\universidad\Desarrollo de software 2\prjectoagendagithub2\agenda>
 ```
 
+Arrojando que las 4 pruebas configuradas en la clase se ejecutaron sin problemas
+
+
 # Pruebas Pruebas de Integración con WebTestClient
 
-Se procede a configurar la clase ContactoControllerTest.java con el siguiente codigido 
+Se procede a configurar la clase ContactoControllerwebTest.java con el siguiente codigido 
 
 ```package com.agenda.agenda;
 
@@ -275,7 +278,7 @@ public class ContactoControllerTest {
 }
 ```
 
-Se ejetutan las pruebas obteniendo el siguiente resultado.
+Se ejecutan las pruebas arrojando los siguientes resultados:
 
 ```[INFO] Scanning for projects...
 [INFO] 
@@ -397,6 +400,42 @@ OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader clas
 [INFO] Finished at: 2025-03-29T16:58:28-05:00
 [INFO] [1m------------------------------------------------------------------------[m
  ```
+
+#Configuración del Pipeline CI/CD
+
+Se recrea el directorio  .github/workflows/  en el repositorio bajo la siguiente URL .github/workflows con el siguien codigo 
+
+ ```
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+    - name: Build with Maven
+      run: mvn -B package --file agenda/pom.xml
+ ```
+
+Arrojando un resultado positivo 
+
+Update maven-publish.yml
+Java CI with Maven #9: Commit 92b9b29 pushed by Romantron
+
 
 
 
